@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ФинСловарь</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg: #f7f8fa;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --text2: #6b7280;
+            --border: #e8e8e8;
+            --accent: #3b82f6;
+            --accent2: #8b5cf6;
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .dark {
+            --bg: #0f0f12;
+            --card: #1a1a20;
+            --text: #f0f0f0;
+            --text2: #9ca3af;
+            --border: #2a2a30;
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .screen {
+            display: none;
+            padding: 16px;
+            padding-bottom: 100px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+            padding-top: 8px;
+            padding-bottom: 12px;
+        }
+
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        header p {
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .search-box {
+            position: relative;
+            margin: 12px 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 16px;
+            outline: none;
+            box-shadow: var(--shadow);
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.5;
+        }
+
+        .categories {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text2);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .chip.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .term-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .term-card:active {
+            transform: scale(0.98);
+        }
+
+        .term-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .term-card .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--accent2);
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .term-card p {
+            font-size: 14px;
+            color: var(--text2);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .detail-header button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .detail-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .detail-content {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .detail-content .meta {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .detail-content .meta span {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text2);
+        }
+
+        .detail-content .desc {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .detail-content .example {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 12px 16px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .example-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .example-text {
+            font-size: 14px;
+            color: var(--text2);
+            font-style: italic;
+        }
+
+        .copy-btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .copy-btn:active {
+            opacity: 0.9;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text2);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        .nav-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 6px;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 11px;
+            border: none;
+            background: none;
+        }
+
+        .nav-item .icon {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        .fav-btn {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+        }
+
+        .fav-btn.active {
+            opacity: 1;
+        }
+
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Экран: Словарь -->
+    <div class="screen active" id="screen-dict">
+        <header>
+            <h1>📘 ФинСловарь</h1>
+            <p>Понятные объяснения финансовых терминов</p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Поиск термина..." autocomplete="off">
+        </div>
+
+        <div class="categories" id="categories">
+            <div class="chip active" data-cat="all">Все</div>
+            <div class="chip" data-cat="bank">Банки</div>
+            <div class="chip" data-cat="invest">Инвестиции</div>
+            <div class="chip" data-cat="credit">Кредиты</div>
+            <div class="chip" data-cat="tax">Налоги</div>
+            <div class="chip" data-cat="crypto">Крипта</div>
+        </div>
+
+        <div id="terms-list"></div>
+    </div>
+
+    <!-- Экран: Детали -->
+    <div class="screen" id="screen-detail">
+        <div class="detail-header">
+            <button onclick="showScreen('dict')">←</button>
+            <h2 id="detail-title"></h2>
+        </div>
+        <div class="detail-content">
+            <button class="fav-btn" id="fav-btn" onclick="toggleFav()">⭐</button>
+            <div class="meta" id="detail-meta"></div>
+            <div class="desc" id="detail-desc"></div>
+            <div class="example" id="detail-example" style="display:none">
+                <div class="example-label">Пример</div>
+                <div class="example-text" id="example-text"></div>
+            </div>
+            <button class="copy-btn" onclick="copyTerm()">📋 Скопировать определение</button>
+        </div>
+    </div>
+
+    <!-- Экран: Избранное -->
+    <div class="screen" id="screen-fav">
+        <header>
+            <h1>⭐ Избранное</h1>
+            <p>Сохранённые термины</p>
+        </header>
+        <div id="fav-list"></div>
+    </div>
+
+    <!-- Навигация -->
+    <nav class="nav-bottom">
+        <button class="nav-item active" onclick="showScreen('dict')">
+            <span class="icon">📘</span>
+            Словарь
+        </button>
+        <button class="nav-item" onclick="showFav()">
+            <span class="icon">⭐</span>
+            Избранное
+        </button>
+    </nav>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Тема
+        if (tg.colorScheme === 'dark') {
+            document.body.classList.add('dark');
+        }
+
+        const terms = [
+            {
+                id: 1,
+                title: "Кэшбэк",
+                cat: "bank",
+                desc: "Возврат части потраченных денег на карту или счёт. Банк или магазин возвращает вам процент от покупки реальными деньгами, а не бонусами.",
+                example: "Купил телефон за 50 000 ₽ с кэшбэком 5%. На карту вернулось 2 500 ₽."
+            },
+            {
+                id: 2,
+                title: "Льготный период",
+                cat: "credit",
+                desc: "Время, в течение которого можно пользоваться деньгами банка (например, на кредитной карте) без уплаты процентов. Обычно 50–100 дней.",
+                example: "Оплатил отпуск кредиткой 1 июня. Если верну деньги до 20 июля — процентов не будет."
+            },
+            {
+                id: 3,
+                title: "Диверсификация",
+                cat: "invest",
+                desc: "Распределение инвестиций между разными активами, чтобы снизить риск. Не клади все яйца в одну корзину.",
+                example: "Вместо покупки только акций Сбера вложил 30% в облигации, 20% в золото и 10% в доллары."
+            },
+            {
+                id: 4,
+                title: "НДФЛ",
+                cat: "tax",
+                desc: "Налог на доходы физических лиц. В России обычно 13% с зарплаты и других доходов. Работодатель удерживает автоматически.",
+                example: "Зарплата 100 000 ₽. НДФЛ 13% = 13 000 ₽. На руки получаю 87 000 ₽."
+            },
+            {
+                id: 5,
+                title: "Стейкинг",
+                cat: "crypto",
+                desc: "Хранение криптовалюты в специальном кошельке для поддержки работы блокчейна. За это начисляются проценты в той же крипте.",
+                example: "Заложил 100 USDT в стейкинг под 8% годовых. Через год получил 108 USDT."
+            },
+            {
+                id: 6,
+                title: "Капитализация вклада",
+                cat: "bank",
+                desc: "Присоединение начисленных процентов к сумме вклада. В следующем периоде проценты начисляются уже на увеличенную сумму — сложный процент.",
+                example: "Вклад 100 000 ₽ под 12% с ежемесячной капитализацией. За год получу 112 683 ₽ вместо 112 000."
+            },
+            {
+                id: 7,
+                title: "Облигация",
+                cat: "invest",
+                desc: "Долговая ценная бумага. Вы даёте деньги в долг компании или государству, а они обязаны вернуть их через срок с процентами.",
+                example: "Купил облигации Минфина на 1 год под 7,5%. Через год получу 107 500 ₽."
+            },
+            {
+                id: 8,
+                title: "Кредитная история",
+                cat: "credit",
+                desc: "Запись о всех ваших кредитах и платежах. Банки смотрят на неё перед выдачей нового кредита. Плохая история = отказ.",
+                example: "Просрочил платёж по кредиту на 5 дней. Эта информация сохранится в истории на 5 лет."
+            },
+            {
+                id: 9,
+                title: "Налоговый вычет",
+                cat: "tax",
+                desc: "Возврат части уплаченного НДФЛ или уменьшение налогооблагаемой базы. Доступен за лечение, обучение, покупку жилья, ИИС.",
+                example: "Внесёл 400 000 ₽ на ИИС. Получу вычет 13% = 52 000 ₽ от государства."
+            },
+            {
+                id: 10,
+                title: "Блокчейн",
+                cat: "crypto",
+                desc: "Цепочка блоков с записями транзакций. Распределённая база данных, которую нельзя подделать. Основа криптовалют.",
+                example: "Биткоин работает на блокчейне: каждый перевод записывается в блок, который видят все участники сети."
+            },
+            {
+                id: 11,
+                title: "Ликвидность",
+                cat: "invest",
+                desc: "Способность актива быстро продаться по рыночной цене. Наличные — самые ликвидные. Недвижимость — неликвидна.",
+                example: "Акции Сбера продал за 5 минут. Квартиру продаю уже 3 месяца — неликвидно."
+            },
+            {
+                id: 12,
+                title: "Процентная ставка",
+                cat: "bank",
+                desc: "Цена денег во времени. Показывает, сколько вы заплатите за пользование чужими деньгами или получите за свои.",
+                example: "Вклад под 15% годовых. Кредитка — 25% годовых. Разница — доход банка."
+            }
+        ];
+
+        let currentTerm = null;
+        let favs = JSON.parse(localStorage.getItem('favs') || '[]');
+        let currentCat = 'all';
+
+        function renderTerms(list = terms) {
+            const container = document.getElementById('terms-list');
+            const q = document.getElementById('search').value.toLowerCase().trim();
+
+            let filtered = list;
+            if (q) {
+                filtered = terms.filter(t => t.title.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+            } else if (currentCat !== 'all') {
+                filtered = terms.filter(t => t.cat === currentCat);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty">
+                        <div class="empty-icon">🔍</div>
+                        <div>Ничего не найдено</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <div class="term-card" onclick="openTerm(${t.id})">
+                    <h3>
+                        ${t.title}
+                        <span class="badge">${getCatName(t.cat)}</span>
+                    </h3>
+                    <p>${t.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        function getCatName(cat) {
+            const map = {
+                bank: 'Банки', invest: 'Инвестиции', credit: 'Кредиты',
+                tax: 'Налоги', crypto: 'Крипта'
+            };
+            return map[cat] || cat;
+        }
+
+        function openTerm(id) {
+            const t = terms.find(x => x.id === id);
+            if (!t) return;
+            currentTerm = t;
+
+            document.getElementById('detail-title').textContent = t.title;
+            document.getElementById('detail-desc').textContent = t.desc;
+            document.getElementById('detail-meta').innerHTML = `
+                <span>${getCatName(t.cat)}</span>
+                <span>ID: ${t.id}</span>
+            `;
+
+            const ex = document.getElementById('detail-example');
+            if (t.example) {
+                document.getElementById('example-text').textContent = t.example;
+                ex.style.display = 'block';
+            } else {
+                ex.style.display = 'none';
+            }
+
+            const btn = document.getElementById('fav-btn');
+            btn.classList.toggle('active', favs.includes(id));
+
+            showScreen('detail');
+        }
+
+        function toggleFav() {
+            if (!currentTerm) return;
+            const id = currentTerm.id;
+            const idx = favs.indexOf(id);
+            if (idx > -1) {
+                favs.splice(idx, 1);
+                showToast('Удалено из избранного');
+            } else {
+                favs.push(id);
+                showToast('Добавлено в избранное');
+            }
+            localStorage.setItem('favs', JSON.stringify(favs));
+            document.getElementById('fav-btn').classList.toggle('active', favs.includes(id));
+        }
+
+        function showFav() {
+            const container = document.getElementById('fav-list');
+            const favTerms = terms.filter(t => favs.includes(t.id));
+
+            if (favTerms.length === 0) {
+                container.innerHTML = `
+                    <div class="empty">
+                        <div class="empty-icon">⭐</div>
+                        <div>Нет избранных терминов</div>
+                        <div style="font-size:13px;margin-top:8px;">Нажмите ⭐ на карточке термина</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = favTerms.map(t => `
+                    <div class="term-card" onclick="openTerm(${t.id})">
+                        <h3>${t.title}</h3>
+                        <p>${t.desc}</p>
+                    </div>
+                `).join('');
+            }
+
+            showScreen('fav');
+        }
+
+        function copyTerm() {
+            if (!currentTerm) return;
+            const text = `📘 *${currentTerm.title}*\n\n${currentTerm.desc}\n\n${currentTerm.example ? 'Пример: ' + currentTerm.example : ''}`;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Скопировано!');
+            }).catch(() => {
+                // Fallback
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('Скопировано!');
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + name).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (name === 'dict') {
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+            } else if (name === 'fav') {
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+            }
+        }
+
+        // Категории
+        document.getElementById('categories').addEventListener('click', e => {
+            if (!e.target.classList.contains('chip')) return;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            currentCat = e.target.dataset.cat;
+            renderTerms();
+        });
+
+        // Поиск
+        document.getElementById('search').addEventListener('input', () => renderTerms());
+
+        // Back button в Telegram
+        tg.BackButton.onClick(() => {
+            if (document.getElementById('screen-detail').classList.contains('active')) {
+                showScreen('dict');
+            }
+        });
+
+        // Инициализация
+        renderTerms();
+    </script>
+</body>
+</html>
